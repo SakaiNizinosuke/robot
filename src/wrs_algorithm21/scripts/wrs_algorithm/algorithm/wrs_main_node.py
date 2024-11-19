@@ -452,6 +452,20 @@ class WrsMainController(object):
             rospy.loginfo("select default waypoint")
 
         return x_line[current_stp]
+    
+    def get_place(self, label):
+        food = ["cracker_box", "sugar_box", "pudding_box", "gelatin_box", "potted_meat_can", "master_chef_can", 
+                "tuna_fish_can", "chips_can", "mustard_bottle", "tomato_soup_can", "banana", "strawberry", 
+                "apple", "lemon", "peach", "pear", "orange", "plum"]
+
+        kitchen_items = ["windex_bottle", "bleach_cleanser", "sponge", "pitcher_base", "pitcher_lid", "plate", 
+                         "bowl", "fork", "spoon", "spatula", "wine_glass", "mug"]
+        if label in food:
+            return "tray_a_place"
+        elif label in kitchen_items:
+            return "container_a_place"
+        else:
+            return "bin_a_place"
 
     def execute_task1(self):
         """
@@ -460,8 +474,16 @@ class WrsMainController(object):
         rospy.loginfo("#### start Task 1 ####")
         hsr_position = [
             ("tall_table", "look_at_tall_table"),
-            ("near_long_table_l", "look_at_near_floor"),
-            # ("long_table_r", "look_at_tall_table"),
+            ("tall_table", "look_at_tall_table"),
+            ("tall_table", "look_at_tall_table"),
+            ("tall_table", "look_at_near_floor"),
+            ("long_table_r", "look_at_long_table"),
+            ("long_table_r", "look_at_long_table"),
+            ("long_table_r", "look_at_long_table"),
+            ("long_table_r", "look_at_near_floor"),
+            ("long_table_r", "look_at_near_floor"),
+            ("long_table_r", "look_at_near_floor"),
+            ("long_table_r", "look_at_near_floor"),
         ]
 
         total_cnt = 0
@@ -491,8 +513,8 @@ class WrsMainController(object):
                 self.change_pose("all_neutral")
 
                 # binに入れる
-                if total_cnt % 2 == 0:  self.put_in_place("bin_a_place", "put_in_bin")
-                else:  self.put_in_place("bin_b_place", "put_in_bin")
+                if total_cnt % 2 == 0:  self.put_in_place(self.get_place(label), "put_in_bin")
+                else:  self.put_in_place(self.get_place(label), "put_in_bin")
                 total_cnt += 1
 
     def execute_task2a(self):
@@ -537,8 +559,8 @@ class WrsMainController(object):
         """
         self.change_pose("all_neutral")
         self.execute_task1()
-        self.execute_task2a()
-        self.execute_task2b()
+        # self.execute_task2a()
+        # self.execute_task2b()
 
 
 def main():
