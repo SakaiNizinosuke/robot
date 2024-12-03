@@ -15,9 +15,11 @@
         "person_a": [0.7, 2.8, 180],
         "person_b": [0.7, 3.9, 180],
         "home": [0, 0.2, 0],
-        "tray_b_place": [2.0, 0.0, -90],
+        "tray_b_place": [1.8, 0.0, -90],
         "tray_a_place": [1.6, 0.0, -90],
-        "container_a_place": [1.2, 0.0, -90]
+        "drawer_in_right":[0.18, 0.3, -90],
+        "drawer_in_left":[0.45, 0.25, -90],
+        "container_a_place": [1.1, 0.0, -90]
     },
     "routes": {
         "test": [

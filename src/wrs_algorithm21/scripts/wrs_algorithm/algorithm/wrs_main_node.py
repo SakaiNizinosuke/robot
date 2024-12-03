@@ -19,6 +19,7 @@ from detector_msgs.srv import (
     GetObjectDetection, GetObjectDetectionRequest)
 from wrs_algorithm.util import omni_base, whole_body, gripper
 import math
+import random
 
 
 class WrsMainController(object):
@@ -27,7 +28,7 @@ class WrsMainController(object):
     """
     IGNORE_LIST = ["small_marker", "large_marker", "lego_duplo", "spatula", "nine_hole_peg_test"]
     GRASP_TF_NAME = "object_grasping"
-    GRASP_BACK_SAFE = {"z": 0.05, "xy": 0.3}
+    GRASP_BACK_SAFE = {"z": 0.05, "xy": 0.5}
     GRASP_BACK = {"z": 0.05, "xy": 0.1}
     HAND_PALM_OFFSET = 0.05  # hand_palm_linkは指の付け根なので、把持のために少しずらす必要がある
     HAND_PALM_Z_OFFSET = 0.075
@@ -263,9 +264,8 @@ class WrsMainController(object):
 
         gripper.command(1)
         whole_body.move_end_effector_pose(grasp_back_safe["x"], grasp_back_safe["y"], grasp_back_safe["z"], yaw, pitch, roll)
-        whole_body.move_end_effector_pose( grasp_back["x"], grasp_back["y"], grasp_back["z"], yaw, pitch, roll)
-        whole_body.move_end_effector_pose(
-            grasp_pos["x"], grasp_pos["y"], grasp_pos["z"], yaw, pitch, roll)
+        whole_body.move_end_effector_pose(grasp_back["x"], grasp_back["y"], grasp_back["z"], yaw, pitch, roll)
+        whole_body.move_end_effector_pose(grasp_pos["x"], grasp_pos["y"], grasp_pos["z"], yaw, pitch, roll)
         gripper.command(0)
         whole_body.move_end_effector_pose(grasp_back_safe["x"], grasp_back_safe["y"], grasp_back_safe["z"], yaw, pitch, roll)
 
@@ -326,9 +326,7 @@ class WrsMainController(object):
 
     def pull_out_trofast(self, x, y, z, yaw, pitch, roll):
         # trofastの引き出しを引き出す
-        self.goto_name("stair_like_drawer")
         self.change_pose("grasp_on_table")
-        a = True  # TODO 不要な変数
         gripper.command(1)
         whole_body.move_end_effector_pose(x, y + self.TROFAST_Y_OFFSET, z, yaw, pitch, roll)
         whole_body.move_end_effector_pose(x, y, z, yaw, pitch, roll)
@@ -336,6 +334,31 @@ class WrsMainController(object):
         whole_body.move_end_effector_pose(x, y + self.TROFAST_Y_OFFSET, z, yaw,  pitch, roll)
         gripper.command(1)
         self.change_pose("all_neutral")
+    #下二つの引き出しを開けるだけの関数
+
+    def open_drawers(self):
+        self.goto_name("stair_like_drawer")
+        #右下
+        self.pull_out_trofast(
+            x=0.15,  # X座標
+            y=-0.3, # Y座標
+            z=0.30, # Z座標
+            yaw=0,  # ヨー角
+            pitch=0, # ピッチ角
+            roll=90   # ロール角
+        )
+        self.goto_name("stair_like_drawer")
+        #左下
+        self.pull_out_trofast(
+            x=0.5,  # X座標
+            y=-0.3, # Y座標
+            z=0.30, # Z座標
+            yaw=0,  # ヨー角
+            pitch=0, # ピッチ角
+            roll=90   # ロール角
+        )
+
+
 
     def push_in_trofast(self, pos_x, pos_y, pos_z, yaw, pitch, roll):
         """
@@ -354,6 +377,28 @@ class WrsMainController(object):
         whole_body.move_end_effector_pose(            pos_x, pos_y, pos_z, yaw, pitch, roll)
 
         self.change_pose("all_neutral")
+    
+    def close_drawers(self):
+        self.goto_name("stair_like_drawer")
+        #右下
+        self.push_in_trofast(
+            x=0.15,  # X座標
+            y=-0.05, # Y座標
+            z=0.30, # Z座標
+            yaw=0,  # ヨー角
+            pitch=0, # ピッチ角
+            roll=90   # ロール角
+        )
+        self.goto_name("stair_like_drawer")
+        #左下
+        self.push_in_trofast(
+            x=0.5,  # X座標
+            y=-0.05, # Y座標
+            z=0.30, # Z座標
+            yaw=0,  # ヨー角
+            pitch=0, # ピッチ角
+            roll=90   # ロール角
+        )
 
     def deliver_to_target(self, target_obj, target_person):
         """
@@ -460,34 +505,81 @@ class WrsMainController(object):
 
         kitchen_items = ["windex_bottle", "bleach_cleanser", "sponge", "pitcher_base", "pitcher_lid", "plate", 
                          "bowl", "fork", "spoon", "spatula", "wine_glass", "mug"]
+        
+        shape_items = ["credit_card_blank", "mini_soccer_ball", "softball", "baseball", "tennis_ball", "racquetball", 
+                       "golf_ball", "marble", "cup", "foam_brick", "dice", "rope", "chain"]
+        
+        tools = ["large_marker", "small_marker", "padlock", "bolt_and_nut", "clamp"]
+
+        task_items = ["rubiks_cube", "colored_wood_block", "nine_hole_peg_test", "toy_airplane", "lego_duplo", 
+                      "magazine", "black_t_shirt", "timer"]
+
+
         if label in food:
-            return "tray_a_place"
+            return random.choice(["tray_a_place", "tray_b_place"])
         elif label in kitchen_items:
             return "container_a_place"
+        elif label in shape_items:
+            return "drawer_in_left"
+        elif label in tools:
+            return "drawer_in_right"
+        elif label in task_items:
+            return "bin_a_place"
         else:
             return "bin_a_place"
+    
+    def get_pose(self, place):
+        if place == "shelf":
+            return "grasp_on_shelf"
+        else:
+            return "grasp_on_table"
+    
+
 
     def execute_task1(self):
         """
         task1を実行する
         """
         rospy.loginfo("#### start Task 1 ####")
+
+        self.open_drawers()
+
         hsr_position = [
-            ("tall_table", "look_at_tall_table"),
-            ("tall_table", "look_at_tall_table"),
             ("tall_table", "look_at_tall_table"),
             ("tall_table", "look_at_near_floor"),
             ("long_table_r", "look_at_long_table"),
-            ("long_table_r", "look_at_long_table"),
-            ("long_table_r", "look_at_long_table"),
-            ("long_table_r", "look_at_near_floor"),
-            ("long_table_r", "look_at_near_floor"),
-            ("long_table_r", "look_at_near_floor"),
-            ("long_table_r", "look_at_near_floor"),
+            ("long_table_r", "look_at_near_floor")
         ]
 
-        total_cnt = 0
+        
+        
+
         for plc, pose in hsr_position:
+            while True:
+                self.goto_name(plc)
+                self.change_pose(pose)
+                gripper.command(0)
+
+                detected_objs = self.get_latest_detection()
+                graspable_obj = self.get_most_graspable_obj(detected_objs.bboxes)
+
+                if graspable_obj is None:
+                    rospy.logwarn("Cannot determine object to grasp. Grasping is aborted.")
+                    break
+                label = graspable_obj["label"]
+                grasp_bbox = graspable_obj["bbox"]
+                rospy.loginfo("grasp the " + label)
+
+                grasp_pos = self.get_grasp_coordinate(grasp_bbox)
+                self.change_pose(self.get_pose(plc))
+                self.exec_graspable_method(grasp_pos, label)
+                self.change_pose("all_neutral")
+
+                # 指定場所に置く
+                self.put_in_place(self.get_place(label), "put_in_bin")
+        
+    
+            """
             for _ in range(self.DETECT_CNT):
                 # 移動と視線指示
                 self.goto_name(plc)
@@ -508,15 +600,17 @@ class WrsMainController(object):
 
                 # 把持対象がある場合は把持関数実施
                 grasp_pos = self.get_grasp_coordinate(grasp_bbox)
-                self.change_pose("grasp_on_table")
+                self.change_pose(self.get_pose(plc))
                 self.exec_graspable_method(grasp_pos, label)
                 self.change_pose("all_neutral")
 
-                # binに入れる
+                # 指定場所に置く
                 if total_cnt % 2 == 0:  self.put_in_place(self.get_place(label), "put_in_bin")
                 else:  self.put_in_place(self.get_place(label), "put_in_bin")
                 total_cnt += 1
-
+                """
+            
+        self.close_drawers()
     def execute_task2a(self):
         """
         task2aを実行する
