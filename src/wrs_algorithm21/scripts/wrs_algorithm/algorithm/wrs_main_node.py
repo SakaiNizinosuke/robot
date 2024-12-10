@@ -354,9 +354,10 @@ class WrsMainController():
     # 下二つの引き出しを開けるだけの関数
 
     def open_drawers(self):
+        """ 62206346 岸秀"""
+
         self.goto_name("stair_like_drawer")
         # 右下
-        """
         self.pull_out_trofast(
             x=0.15,  # X座標
             y=-0.3,  # Y座標
@@ -366,7 +367,7 @@ class WrsMainController():
             roll=90   # ロール角
         )
         self.goto_name("stair_like_drawer")
-        """
+        
         # 左下
         self.pull_out_trofast(
             x=0.5,  # X座標
@@ -398,6 +399,7 @@ class WrsMainController():
         self.change_pose("all_neutral")
 
     def close_drawers(self):
+        """ 62206346 岸秀"""
         self.goto_name("stair_like_drawer")
         # 右下
         self.push_in_trofast(
