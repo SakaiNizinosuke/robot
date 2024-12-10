@@ -31,7 +31,8 @@ class WrsMainController():
     """
     WRSのシミュレーション環境内でタスクを実行するクラス
     """
-    IGNORE_LIST = ["small_marker", "large_marker", "lego_duplo", "spatula", "nine_hole_peg_test", "clamp"]
+    IGNORE_LIST = ["small_marker", "large_marker", "lego_duplo",
+                   "spatula", "nine_hole_peg_test", "clamp"]  # clampを追加
     GRASP_TF_NAME = "object_grasping"
     GRASP_BACK_SAFE = {"z": 0.05, "xy": 0.5}
     GRASP_BACK = {"z": 0.05, "xy": 0.1}
@@ -111,7 +112,7 @@ class WrsMainController():
             return trans.transform
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException,
                 tf2_ros.ExtrapolationException):
-            log_str = "failed to get transform between [{}] and [{}]\n".format(parent, child)
+            log_str = f"failed to get transform between [{parent}] and [{child}]\n"
             log_str += traceback.format_exc()
             rospy.logerr(log_str)
             return None
@@ -191,22 +192,22 @@ class WrsMainController():
         extract_str = "detected object list\n"
         ignore_str = ""
         for obj in obj_list:
-            info_str = ("{:<15}({:.2%}, {:3d}, {:3d}, {:3d}, {:3d})\n"
-                        .format(obj.label, obj.score, obj.x, obj.y, obj.w, obj.h))
+            info_str = (f"{obj.label:<15}({obj.score:.2%}, "
+                        f"{obj.x:3d}, {obj.y:3d}, {obj.w:3d}, {obj.h:3d})\n")
             if obj.label in cls.IGNORE_LIST:
                 ignore_str += "- ignored  : " + info_str
             else:
                 score = cls.calc_score_bbox(obj)
                 extracted.append({"bbox": obj, "score": score, "label": obj.label})
-                extract_str += "- extracted: {:07.3f} ".format(score) + info_str
+                extract_str += f"- extracted: {score:07.3f} " + info_str
 
         rospy.loginfo(extract_str + ignore_str)
 
         # つかむべきかのscoreが一番高い物体を返す
         for obj_info in sorted(extracted, key=lambda x: x["score"], reverse=True):
             obj = obj_info["bbox"]
-            info_str = ("{} ({:.2%}, {:3d}, {:3d}, {:3d}, {:3d})\n"
-                        .format(obj.label, obj.score, obj.x, obj.y, obj.w, obj.h))
+            info_str = (f"{obj.label} ({obj.score:.2%}, "
+                        f"{obj.x:3d}, {obj.y:3d}, {obj.w:3d}, {obj.h:3d})\n")
             rospy.loginfo("selected bbox: " + info_str)
             return obj_info
 
@@ -237,9 +238,8 @@ class WrsMainController():
 
     @staticmethod
     def extract_target_obj_and_person(instruction):
-        """
-        指示文から対象となる物体名称を抽出する
-        """
+        """ 62206346 岸秀"""
+        # 指示文から対象となる物体名称を抽出する
         rospy.loginfo("[extract_target_obj_and_person] instruction:" + instruction)
         parts = instruction.split(" to person ")
         target_obj = parts[0].strip()
@@ -254,14 +254,15 @@ class WrsMainController():
         NOTE: tall_tableに対しての予備動作を生成するときはpreliminary="-y"と設定することになる。
         """
         if preliminary not in ["+y", "-y", "+x", "-x"]:
-            raise RuntimeError("unnkown graps preliminary type [{}]".format(preliminary))
+            raise RuntimeError(f"unnkown graps preliminary type [{preliminary}]")
 
-        rospy.loginfo("move hand to grasp (%.2f, %.2f, %.2f)", pos_x, pos_y, pos_z)
+        rospy.loginfo(f"move hand to grasp ({pos_x:.2f},{pos_y:.2f}, {pos_z:.2f})")
 
         grasp_back_safe = {"x": pos_x, "y": pos_y, "z": pos_z + self.GRASP_BACK["z"]}
         grasp_back = {"x": pos_x, "y": pos_y, "z": pos_z + self.GRASP_BACK["z"]}
         grasp_pos = {"x": pos_x, "y": pos_y, "z": pos_z}
 
+        sign = 1
         if "+" in preliminary:
             sign = 1
         elif "-" in preliminary:
@@ -332,7 +333,7 @@ class WrsMainController():
         return True
 
     def put_in_place(self, place, into_pose):
-        # 指定場所に入れ、all_neutral姿勢を取る。
+        """指定場所に入れ、all_neutral姿勢を取る。"""
         self.change_pose("look_at_near_floor")
         self.goto_name(place)
         self.change_pose("all_neutral")
@@ -342,7 +343,7 @@ class WrsMainController():
         self.change_pose("all_neutral")
 
     def pull_out_trofast(self, x, y, z, yaw, pitch, roll):
-        # trofastの引き出しを引き出す
+        """trofastの引き出しを引き出す"""
         self.change_pose("grasp_on_table")
         gripper.command(1)
         whole_body.move_end_effector_pose(x, y + self.TROFAST_Y_OFFSET, z, yaw, pitch, roll)
@@ -367,7 +368,7 @@ class WrsMainController():
             roll=90   # ロール角
         )
         self.goto_name("stair_like_drawer")
-        
+
         # 左下
         self.pull_out_trofast(
             x=0.5,  # X座標
@@ -422,9 +423,9 @@ class WrsMainController():
         )
 
     def deliver_to_target(self, target_obj, target_person):
-        """
-        棚で取得したものを人に渡す。
-        """
+        """ 62206346 岸秀"""
+        # 棚で取得したものを人に渡す。
+
         self.change_pose("look_at_near_floor")
         self.goto_name("shelf")
         self.change_pose("look_at_shelf")
@@ -458,7 +459,7 @@ class WrsMainController():
         self.change_pose("all_neutral")
 
     def execute_avoid_blocks(self):
-        # blockを避ける
+        """blockを避ける"""
         for i in range(3):
             detected_objs = self.get_latest_detection()
             bboxes = detected_objs.bboxes
@@ -489,7 +490,7 @@ class WrsMainController():
         is_to_xc = True
         for bbox in pos_bboxes:
             pos_x = bbox.x
-            rospy.loginfo("detected object obj.x = {:.2f}".format(bbox.x))
+            rospy.loginfo(f"detected object obj.x = {bbox.x:.2f}")
 
             # NOTE Hint:ｙ座標次第で無視してよいオブジェクトもある。
             if pos_x < pos_xa + (interval/2):
@@ -524,6 +525,10 @@ class WrsMainController():
         return x_line[current_stp]
 
     def get_place(self, label):
+        """62208527 坂井虹之助"""
+        # 引数str：物体のラベル
+        # 返値str：片づけ場所
+
         food = ["cracker_box", "sugar_box", "pudding_box", "gelatin_box", "potted_meat_can",
                 "master_chef_can", "tuna_fish_can", "chips_can", "mustard_bottle",
                 "tomato_soup_can", "banana", "strawberry", "apple", "lemon", "peach",
@@ -555,11 +560,17 @@ class WrsMainController():
         return "bin_a_place"
 
     def get_pose(self, place):
+        """62208527 坂井虹之助"""
+        # 引数str：場所の名称
+        # 返値str：把持姿勢
         if place == "shelf":
             return "grasp_on_shelf"
         return "grasp_on_table"
-    
+
     def get_put_pose(self, label):
+        """62208527 坂井虹之助"""
+        # 引数str：物体の名称
+        # 返値str：入れる姿勢
         if label == "toy_airplane":
             return "put_in_container"
         return "put_in_bin"
@@ -605,42 +616,16 @@ class WrsMainController():
                 self.change_pose("all_neutral")
 
                 # 指定場所に置く
-                # self.put_in_place(self.get_place(label), "put_in_bin")
-                self.put_in_place(item_dict.get(label, "container_a_place"), self.get_put_pose(label))
+                # 汎用性有。seed86で使用。
+                # self.put_in_place(self.get_place(label), self.get_put_pose(label))
+
+                # 汎用性無。seed1で使用。
+                self.put_in_place(item_dict.get(label, "container_a_place"),
+                                  self.get_put_pose(label))
                 count += 1
                 if count >= 7:
                     break
-        # self.close_drawers()
-        """
-            for _ in range(self.DETECT_CNT):
-                # 移動と視線指示
-                self.goto_name(plc)
-                self.change_pose(pose)
-                gripper.command(0)
-
-                # 把持対象の有無チェック
-                detected_objs = self.get_latest_detection()
-                graspable_obj = self.get_most_graspable_obj(detected_objs.bboxes)
-
-                if graspable_obj is None:
-                    rospy.logwarn("Cannot determine object to grasp. Grasping is aborted.")
-                    continue
-                label = graspable_obj["label"]
-                grasp_bbox = graspable_obj["bbox"]
-                # TODO ラベル名を確認するためにコメントアウトを外す
-                # rospy.loginfo("grasp the " + label)
-
-                # 把持対象がある場合は把持関数実施
-                grasp_pos = self.get_grasp_coordinate(grasp_bbox)
-                self.change_pose(self.get_pose(plc))
-                self.exec_graspable_method(grasp_pos, label)
-                self.change_pose("all_neutral")
-
-                # 指定場所に置く
-                if total_cnt % 2 == 0:  self.put_in_place(self.get_place(label), "put_in_bin")
-                else:  self.put_in_place(self.get_place(label), "put_in_bin")
-                total_cnt += 1
-        """
+        self.close_drawers()
 
     def execute_task2a(self):
         """
