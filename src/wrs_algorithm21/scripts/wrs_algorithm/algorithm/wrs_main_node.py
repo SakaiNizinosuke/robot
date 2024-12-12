@@ -423,7 +423,7 @@ class WrsMainController():
         )
 
     def deliver_to_target(self, target_obj, target_person):
-        """ 62206346 岸秀"""
+        """62206346 岸秀"""
         # 棚で取得したものを人に渡す。
 
         self.change_pose("look_at_near_floor")
@@ -576,9 +576,9 @@ class WrsMainController():
         return "put_in_bin"
 
     def execute_task1(self):
-        """
-        task1を実行する
-        """
+        """62208527 坂井虹之助"""
+        # task1を実行する
+
         rospy.loginfo("#### start Task 1 ####")
         self.open_drawers()
 
@@ -628,9 +628,9 @@ class WrsMainController():
         self.close_drawers()
 
     def execute_task2a(self):
-        """
-        task2aを実行する
-        """
+        """62206346 岸秀"""
+        # task2aを実行する
+
         rospy.loginfo("#### start Task 2a ####")
         self.change_pose("look_at_near_floor")
         gripper.command(0)
@@ -644,9 +644,9 @@ class WrsMainController():
         whole_body.move_to_go()
 
     def execute_task2b(self):
-        """
-        task2bを実行する
-        """
+        """62206346 岸秀"""
+        # task2bを実行する
+
         rospy.loginfo("#### start Task 2b ####")
 
         # 命令文を取得
